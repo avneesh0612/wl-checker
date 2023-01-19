@@ -7,32 +7,38 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
-import { ChainId, useContract } from "@thirdweb-dev/react";
+import {
+  ChainId,
+  MediaRenderer,
+  useContract,
+  useContractMetadata,
+} from "@thirdweb-dev/react";
 import type { NextPage } from "next";
+import Link from "next/link";
+import { useRouter } from "next/router";
 import React, { useContext, useState } from "react";
 import ChainContext from "../Context/Chain";
 
 const Home: NextPage = () => {
-  const [nftDropAddress, setNftDropAddress] = useState<string>(
-    "0xb3db8C75416C7Fe6E9118FaB66A64a9399Cd1c39"
-  );
-  const [address, setAddress] = useState<string>("");
-  const { contract: nftDrop, isLoading } = useContract(
-    nftDropAddress,
-    "nft-drop"
-  );
+  const router = useRouter();
+  const address = router.query.contract as string;
+  const network = router.query.network as string;
+  const [contractAddress, setContractAddress] = useState<string>("");
+  const [walletAddress, setWalletAddress] = useState<string>("");
+  const { contract, isLoading } = useContract(address, "nft-drop");
   const [loading, setLoading] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
   const { selectedChain, setSelectedChain } = useContext(ChainContext);
+  const { data: metadata } = useContractMetadata(contract);
 
   const check = async () => {
-    if (!address) {
-      return setMessage("Please enter an address!");
+    if (!walletAddress) {
+      return setMessage("Please enter a wallet address!");
     }
 
     setLoading(true);
-    const data = await nftDrop?.erc721.claimConditions.getClaimerProofs(
-      address
+    const data = await contract?.erc721.claimConditions.getClaimerProofs(
+      walletAddress
     );
 
     if (data) {
@@ -47,53 +53,105 @@ const Home: NextPage = () => {
     <VStack bg="#0f1318" color="gray.100" minH="100vh" justify="center">
       <Flex flexDir="column" gap={4}>
         <Heading>Whitelist checker!</Heading>
-        <Flex flexDir="column" gap={1}>
-          <Text>NFT Drop Address: </Text>
-          <Input
-            type="text"
-            placeholder="NFT Drop Address"
-            value={nftDropAddress}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setNftDropAddress(e.target.value)
-            }
-          />
-        </Flex>
 
-        <Flex flexDir="column" gap={1}>
-          <Text>Wallet Address: </Text>
-          <Input
-            type="text"
-            placeholder="Enter your address"
-            value={address}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setAddress(e.target.value)
-            }
-          />
-        </Flex>
+        {!address && (
+          <Flex flexDir="column" gap={1}>
+            <Text>Contract Address: </Text>
+            <Input
+              type="text"
+              placeholder="NFT Drop Address"
+              value={contractAddress}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setContractAddress(e.target.value)
+              }
+            />
+          </Flex>
+        )}
 
-        <Flex flexDir="column" gap={1}>
-          <Text>Select Network: </Text>
+        {!network && (
+          <Flex flexDir="column" gap={1}>
+            <Text>Select Network: </Text>
 
-          <Select
-            value={String(selectedChain)}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-              setSelectedChain(parseInt(e.target.value))
-            }
+            <Select
+              value={String(selectedChain)}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                setSelectedChain(parseInt(e.target.value))
+              }
+            >
+              <option value={ChainId.Mainnet}>Mainnet</option>
+              <option value={ChainId.Polygon}>Polygon</option>
+              <option value={ChainId.Optimism}>Optimism</option>
+              <option value={ChainId.Avalanche}>Avalanche</option>
+              <option value={ChainId.Goerli}>Goerli</option>
+              <option value={ChainId.Mumbai}>Mumbai</option>
+            </Select>
+          </Flex>
+        )}
+
+        {(!network || !address) && (
+          <Link
+            href={`?contract=${contractAddress}&network=${selectedChain}`}
+            passHref
           >
-            <option value={ChainId.Mainnet}>Mainnet</option>
-            <option value={ChainId.Polygon}>Polygon</option>
-            <option value={ChainId.Optimism}>Optimism</option>
-            <option value={ChainId.Avalanche}>Avalanche</option>
-            <option value={ChainId.Goerli}>Goerli</option>
-            <option value={ChainId.Mumbai}>Mumbai</option>
-          </Select>
-        </Flex>
+            <Button
+              _hover={{ bg: "gray.600" }}
+              _active={{ bg: "gray.800" }}
+              _focus={{ outline: "none" }}
+              bg="gray.700"
+              color="gray.100"
+              w="full"
+            >
+              Go
+            </Button>
+          </Link>
+        )}
 
-        <Button onClick={check}>
-          {isLoading || loading ? "Loading..." : "Check if whitelisted"}
-        </Button>
+        {metadata && (
+          <Flex flexDir="column" gap={1} align="center">
+            <MediaRenderer
+              src={metadata.image}
+              alt={metadata.name}
+              height="250px"
+              width="250px"
+            />
+            <Text>
+              {metadata.name}
+              {metadata.name && metadata.symbol && " - "}
+              {metadata.symbol}
+            </Text>
+            <Text>{metadata.description}</Text>
+          </Flex>
+        )}
 
-        {message && <Text align="center">{message}</Text>}
+        {network && address && (
+          <>
+            <Flex flexDir="column" gap={1}>
+              <Text>Wallet Address: </Text>
+              <Input
+                type="text"
+                placeholder="Enter your address"
+                value={walletAddress}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setWalletAddress(e.target.value)
+                }
+              />
+            </Flex>
+
+            <Button
+              _hover={{ bg: "gray.600" }}
+              _active={{ bg: "gray.800" }}
+              _focus={{ outline: "none" }}
+              onClick={check}
+              bg="gray.700"
+              color="gray.100"
+              w="full"
+            >
+              {isLoading || loading ? "Loading..." : "Check if whitelisted"}
+            </Button>
+
+            {message && <Text align="center">{message}</Text>}
+          </>
+        )}
       </Flex>
     </VStack>
   );
