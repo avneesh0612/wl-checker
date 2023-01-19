@@ -37,16 +37,22 @@ const Home: NextPage = () => {
     }
 
     setLoading(true);
-    const data = await contract?.erc721.claimConditions.getClaimerProofs(
-      walletAddress
-    );
 
-    if (data) {
-      setMessage(`You can claim ${data.maxClaimable} NFTs!`);
-    } else {
+    try {
+      const data = await contract?.erc721.claimConditions.getClaimerProofs(
+        walletAddress
+      );
+
+      if (data) {
+        setMessage(`You can claim ${data.maxClaimable} NFTs!`);
+      } else {
+        setMessage("You can't claim any NFTs!");
+      }
+    } catch (e) {
       setMessage("You can't claim any NFTs!");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
@@ -107,7 +113,7 @@ const Home: NextPage = () => {
         )}
 
         {metadata && (
-          <Flex flexDir="column" gap={1} align="center">
+          <Flex flexDir="column" gap={1} align="center" maxW="400px">
             <MediaRenderer
               src={metadata.image}
               alt={metadata.name}
@@ -119,7 +125,9 @@ const Home: NextPage = () => {
               {metadata.name && metadata.symbol && " - "}
               {metadata.symbol}
             </Text>
-            <Text>{metadata.description}</Text>
+            <Text textAlign="center" noOfLines={4}>
+              {metadata.description}
+            </Text>
           </Flex>
         )}
 
