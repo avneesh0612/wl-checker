@@ -56,13 +56,13 @@ const Home: NextPage = () => {
   };
 
   return (
-    <VStack bg="#0f1318" color="gray.100" minH="100vh" justify="center">
+    <VStack bg="#0f1318" minH="100vh" justify="center">
       <Flex flexDir="column" gap={4}>
-        <Heading>Whitelist checker!</Heading>
+        <Heading color="gray.100">Whitelist checker!</Heading>
 
         {!address && (
           <Flex flexDir="column" gap={1}>
-            <Text>Contract Address: </Text>
+            <Text color="gray.100">Contract Address: </Text>
             <Input
               type="text"
               placeholder="NFT Drop Address"
@@ -76,13 +76,14 @@ const Home: NextPage = () => {
 
         {!network && (
           <Flex flexDir="column" gap={1}>
-            <Text>Select Network: </Text>
+            <Text color="gray.100">Select Network: </Text>
 
             <Select
               value={String(selectedChain)}
               onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                 setSelectedChain(parseInt(e.target.value))
               }
+              variant="filled"
             >
               <option value={ChainId.Mainnet}>Mainnet</option>
               <option value={ChainId.Polygon}>Polygon</option>
