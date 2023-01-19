@@ -84,6 +84,9 @@ const Home: NextPage = () => {
                 setSelectedChain(parseInt(e.target.value))
               }
               variant="filled"
+              _focus={{
+                color: "gray.100",
+              }}
             >
               <option value={ChainId.Mainnet}>Mainnet</option>
               <option value={ChainId.Polygon}>Polygon</option>
